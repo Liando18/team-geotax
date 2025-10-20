@@ -17,7 +17,7 @@ export const getServerSideProps: GetServerSideProps<
   ConnectionStatus
 > = async () => {
   try {
-    await client.connect();
+    await client;
     return { props: { isConnected: true } };
   } catch (e) {
     return { props: { isConnected: false } };
