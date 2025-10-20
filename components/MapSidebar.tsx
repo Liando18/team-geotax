@@ -1,5 +1,14 @@
-import { MapPin, Layers, X, Upload, Search, Trash, LucideTimerReset } from "lucide-react";
-import { useState, useMemo } from "react";
+import {
+  MapPin,
+  Layers,
+  X,
+  Upload,
+  Search,
+  Trash,
+  LucideTimerReset,
+} from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { toast } from "sonner";
 
 type Props = {
   sidebarOpen: boolean;
@@ -10,10 +19,15 @@ type Props = {
   setSidebarOpen: (open: boolean) => void;
 };
 
-const LAYER_DATA = [
-  { id: "Batas_Kecmatan_Padang_WGS84.geojson", name: "Batas Kecamatan Padang" },
-  { id: "ZNT_AirTawarBarat_WGS84.geojson", name: "ZNT Air Tawar" },
-];
+type GeoLayer = {
+  _id: string;
+  name: string;
+  filename: string;
+  properties: string[];
+  createdAt: string;
+};
+
+const LAYER_DATA: GeoLayer[] = [];
 
 export default function MapSidebar({
   sidebarOpen,
@@ -32,13 +46,29 @@ export default function MapSidebar({
   const [geojsonData, setGeojsonData] = useState<any>(null);
   const [uploadError, setUploadError] = useState("");
   const [uploadWarning, setUploadWarning] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [layers, setLayers] = useState<GeoLayer[]>([]);
 
   const filteredLayers = useMemo(() => {
-    if (!searchQuery.trim()) return LAYER_DATA;
-    return LAYER_DATA.filter((layer) =>
+    if (!searchQuery.trim()) return layers;
+    return layers.filter((layer) =>
       layer.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery]);
+  }, [searchQuery, layers]);
+
+  useEffect(() => {
+    fetchLayers();
+  }, []);
+
+  const fetchLayers = async () => {
+    try {
+      const response = await fetch("/api/collects/geo");
+      const data = await response.json();
+      setLayers(data.geo || []);
+    } catch (error) {
+      console.error("Error fetching layers:", error);
+    }
+  };
 
   const validateGeoJSON = async (file: File) => {
     setUploadError("");
@@ -69,8 +99,14 @@ export default function MapSidebar({
       }
 
       const crsName = data.crs?.properties?.name || "";
-      if (!crsName.includes("CRS84") && !crsName.includes("4326") && !crsName.includes("WGS")) {
-        setUploadWarning("⚠️ Peringatan: CRS file bukan EPSG:4326 (WGS 84). Pastikan koordinat sudah benar.");
+      if (
+        !crsName.includes("CRS84") &&
+        !crsName.includes("4326") &&
+        !crsName.includes("WGS")
+      ) {
+        setUploadWarning(
+          "⚠️ Peringatan: CRS file bukan EPSG:4326 (WGS 84). Pastikan koordinat sudah benar."
+        );
       }
 
       setGeojsonData(data);
@@ -104,15 +140,17 @@ export default function MapSidebar({
       if (!response.ok) {
         const error = await response.json();
         console.error("Delete error:", error);
-        alert("Gagal menghapus layer");
+        toast.error("Gagal menghapus layer");
         return;
       }
 
+      toast.success("Layer berhasil dihapus!");
       setShowDeleteModal(false);
       setDeleteLayerId(null);
+      fetchLayers();
     } catch (error: any) {
       console.error("Delete error:", error);
-      alert("Error: " + error.message);
+      toast.error("Error: " + error.message);
     }
   };
 
@@ -122,8 +160,12 @@ export default function MapSidebar({
       return;
     }
 
+    setIsLoading(true);
     try {
-      const filename = `${uploadName.replace(/\s+/g, "_")}_${Date.now()}.geojson`;
+      const filename = `${uploadName.replace(
+        /\s+/g,
+        "_"
+      )}_${Date.now()}.geojson`;
 
       const response = await fetch("/api/collects/geo", {
         method: "POST",
@@ -139,6 +181,8 @@ export default function MapSidebar({
       if (!response.ok) {
         const error = await response.json();
         setUploadError(error.error || "Upload gagal");
+        toast.error("Upload gagal: " + (error.error || "Unknown error"));
+        setIsLoading(false);
         return;
       }
 
@@ -148,8 +192,14 @@ export default function MapSidebar({
       setGeojsonData(null);
       setUploadError("");
       setUploadWarning("");
+      toast.success("GeoJSON berhasil diupload!");
+      setIsLoading(false);
+
+      fetchLayers();
     } catch (error: any) {
       setUploadError("Error: " + error.message);
+      toast.error("Error: " + error.message);
+      setIsLoading(false);
     }
   };
 
@@ -184,7 +234,10 @@ export default function MapSidebar({
 
           <div className="mb-4 relative">
             <div className="relative">
-              <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
+              />
               <input
                 type="text"
                 placeholder="Cari layer..."
@@ -197,30 +250,32 @@ export default function MapSidebar({
 
           <div className="space-y-2 flex-1 overflow-y-auto pr-1 [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-600 [&::-webkit-scrollbar-thumb]:rounded-full">
             {filteredLayers.length > 0 ? (
-              filteredLayers.map((layer) => (
-                <div
-                  key={layer.id}
-                  className={`w-full text-sm p-3 rounded-lg transition font-medium flex items-center justify-between gap-3 ${
-                    selectedFile === layer.id
-                      ? "bg-green-600"
-                      : "bg-slate-700 hover:bg-slate-600"
-                  }`}>
-                  <button
-                    onClick={() => {
-                      loadGeoJsonFile(layer.id);
-                      if (isMobile) setSidebarOpen(false);
-                    }}
-                    className="flex items-center gap-3 text-left hover:opacity-80 transition flex-1 min-w-0">
-                    <MapPin size={18} className="flex-shrink-0" />
-                    <span className="break-words">{layer.name}</span>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteClick(layer.id)}
-                    className="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition flex-shrink-0">
-                    <Trash size={16} />
-                  </button>
-                </div>
-              ))
+              [...filteredLayers] // salin array agar tidak mutasi data asli
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // urutkan descending
+                .map((layer) => (
+                  <div
+                    key={layer._id}
+                    className={`w-full text-sm p-3 rounded-lg transition font-medium flex items-center justify-between gap-3 ${
+                      selectedFile === layer.filename
+                        ? "bg-green-600"
+                        : "bg-slate-700 hover:bg-slate-600"
+                    }`}>
+                    <button
+                      onClick={() => {
+                        loadGeoJsonFile(layer.filename);
+                        if (isMobile) setSidebarOpen(false);
+                      }}
+                      className="flex items-center gap-3 text-left hover:opacity-80 transition flex-1 min-w-0">
+                      <MapPin size={18} className="flex-shrink-0" />
+                      <span className="break-words">{layer.name}</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(layer._id)}
+                      className="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition flex-shrink-0">
+                      <Trash size={16} />
+                    </button>
+                  </div>
+                ))
             ) : (
               <div className="text-slate-400 text-sm text-center py-4">
                 Tidak ada layer yang cocok
@@ -243,14 +298,27 @@ export default function MapSidebar({
         </div>
       </div>
 
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 px-4 py-3 rounded-lg text-white font-medium shadow-lg z-[10000] animate-fade-in ${
+            toast.type === "success" ? "bg-green-600" : "bg-red-600"
+          }`}>
+          {toast.message}
+        </div>
+      )}
+
       {showUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-[9999]">
           <div className="bg-slate-800 rounded-lg border-2 border-slate-600 p-6 w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-4">Upload GeoJSON</h3>
+            <h3 className="text-lg font-bold text-white mb-4">
+              Upload GeoJSON
+            </h3>
 
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Nama Layer</label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Nama Layer
+                </label>
                 <input
                   type="text"
                   placeholder="Masukkan nama layer..."
@@ -261,7 +329,9 @@ export default function MapSidebar({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">File GeoJSON</label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  File GeoJSON
+                </label>
                 <input
                   type="file"
                   accept=".geojson,.json"
@@ -287,11 +357,15 @@ export default function MapSidebar({
 
               {geojsonData && getPropertyKeys().length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Properties dalam Features:</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Properties dalam Features:
+                  </label>
                   <div className="bg-slate-700 rounded-lg p-3 border border-slate-600">
                     <div className="flex flex-wrap gap-2">
                       {getPropertyKeys().map((key) => (
-                        <span key={key} className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-medium">
+                        <span
+                          key={key}
+                          className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-medium">
                           {key}
                         </span>
                       ))}
@@ -316,9 +390,16 @@ export default function MapSidebar({
               </button>
               <button
                 onClick={handleUpload}
-                disabled={!geojsonData || !uploadName.trim()}
-                className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium transition">
-                Upload
+                disabled={!geojsonData || !uploadName.trim() || isLoading}
+                className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium transition flex items-center gap-2">
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Uploading...
+                  </>
+                ) : (
+                  "Upload"
+                )}
               </button>
             </div>
           </div>
@@ -329,7 +410,9 @@ export default function MapSidebar({
         <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-[9999]">
           <div className="bg-slate-800 rounded-lg border-2 border-slate-600 p-6 w-lg shadow-2xl">
             <h3 className="text-lg font-bold text-white mb-2">Hapus Layer</h3>
-            <p className="text-slate-300 mb-6">Apakah Anda yakin ingin menghapus layer ini?</p>
+            <p className="text-slate-300 mb-6">
+              Apakah Anda yakin ingin menghapus layer ini?
+            </p>
 
             <div className="flex gap-3 justify-end">
               <button

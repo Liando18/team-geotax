@@ -1,7 +1,13 @@
-import '@/styles/globals.css'
-import 'leaflet/dist/leaflet.css'
+import "@/styles/globals.css";
+import "leaflet/dist/leaflet.css";
+import { Toaster } from "sonner";
 import type { AppProps } from "next/app";
 
 export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />;
+  return (
+    <>
+      <Component {...pageProps} />
+      <Toaster position="top-right" theme="dark" />
+    </>
+  );
 }

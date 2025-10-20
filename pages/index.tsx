@@ -1,32 +1,21 @@
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Inter } from "next/font/google";
-import client from "@/lib/mongodb";
-import type { InferGetServerSidePropsType, GetServerSideProps } from "next";
 import MapHeader from "@/components/MapHeader";
 import MapSidebar from "@/components/MapSidebar";
 
-type ConnectionStatus = { isConnected: boolean };
+type Props = {
+  isConnected: boolean;
+};
+
 const inter = Inter({ subsets: ["latin"] });
 
 const MapContainer = dynamic(() => import("@/components/MapContainer"), {
   ssr: false,
 });
 
-export const getServerSideProps: GetServerSideProps<
-  ConnectionStatus
-> = async () => {
-  try {
-    await client;
-    return { props: { isConnected: true } };
-  } catch (e) {
-    return { props: { isConnected: false } };
-  }
-};
-
-export default function Home({
-  isConnected,
-}: InferGetServerSidePropsType<typeof getServerSideProps>) {
+export default function Home() {
+  const [isConnected, setIsConnected] = useState(true);
   const [lat, setLat] = useState(-0.8947);
   const [lng, setLng] = useState(100.3357);
   const [zoom, setZoom] = useState(11);
@@ -35,6 +24,28 @@ export default function Home({
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/test-db")
+      .then((res) => res.json())
+      .catch(() => setIsConnected(false));
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
 
   const handleReset = () => {
     setLat(-0.8947);
