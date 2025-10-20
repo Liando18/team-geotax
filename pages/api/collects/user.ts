@@ -10,19 +10,20 @@ type Data = {
 
 export default async (req:NextApiRequest, res:NextApiResponse) => {
     try {
-        const db = client.db("md-dev-geotax")
-        const collect = db.collection("user")
+        const mongoClient = await client;
+        const db = mongoClient.db("md-dev-geotax");
+        const collection = db.collection("user");
 
         if (req.method == "POST") {
             const {username, password, name} = req.body
-            const result = await collect.insertOne({username, password, name})
+            const result = await collection.insertOne({username, password, name})
 
             res.status(201).json({
                 message: "User saved", 
                 id: result.insertedId.toString()
             })
         } else if (req.method == "GET") {
-            const data = await collect.find({}).toArray()
+            const data = await collection.find({}).toArray()
 
             res.status(200).json({
                 message: "Fetched User", 
