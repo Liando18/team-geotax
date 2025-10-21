@@ -1,5 +1,5 @@
 import TileLayerButtons from "@/components/TileLayerButtons";
-import { Zap, X, Menu, LogOut } from "lucide-react";
+import { Zap, X, Menu, LogOut, MapIcon } from "lucide-react";
 import { useRouter } from "next/router";
 import { toast } from "sonner";
 
@@ -39,7 +39,7 @@ export default function MapHeader({
     <div className="bg-gradient-to-r from-slate-800 to-slate-700 border-b border-slate-600 p-3 lg:p-4 shadow-lg">
       <div className="flex items-center justify-between mb-3">
         <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2 lg:gap-3">
-          <Zap className="text-yellow-400" size={28} />
+          <MapIcon className="text-green-400" size={28} />
           <span className="hidden sm:inline">GeoTax Arutala Map Viewer</span>
           <span className="sm:hidden">GeoTax</span>
         </h1>
