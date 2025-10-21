@@ -109,7 +109,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center mb-7">
+            <div className="flex items-center mb-6">
               <input
                 type="checkbox"
                 id="rememberDevice"
