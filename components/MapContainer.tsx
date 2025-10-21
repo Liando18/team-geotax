@@ -52,7 +52,6 @@ export default function MapContainer({
     },
   };
 
-  // Initialize map once
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
@@ -83,7 +82,6 @@ export default function MapContainer({
     };
   }, [setLat, setLng, setZoom]);
 
-  // Change tile layer
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -101,7 +99,6 @@ export default function MapContainer({
     }).addTo(map);
   }, [tileLayer]);
 
-  // Load GeoJSON when file changes
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -119,7 +116,7 @@ export default function MapContainer({
 
     const loadGeoJson = async () => {
       try {
-        const response = await fetch(`/data/geojson/${geoJsonFile}`);
+        const response = await fetch(geoJsonFile);
         if (!response.ok) throw new Error(`Failed to fetch ${geoJsonFile}`);
 
         const geojson = await response.json();

@@ -25,6 +25,7 @@ type GeoLayer = {
   filename: string;
   properties: string[];
   createdAt: string;
+  blobUrl: string;
 };
 
 const LAYER_DATA: GeoLayer[] = [];
@@ -47,6 +48,8 @@ export default function MapSidebar({
   const [uploadError, setUploadError] = useState("");
   const [uploadWarning, setUploadWarning] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingLayerId, setLoadingLayerId] = useState<string | null>(null);
+  const [deletingLayerId, setDeletingLayerId] = useState<string | null>(null);
   const [layers, setLayers] = useState<GeoLayer[]>([]);
 
   const filteredLayers = useMemo(() => {
@@ -130,6 +133,8 @@ export default function MapSidebar({
   const confirmDelete = async () => {
     if (!deleteLayerId) return;
 
+    setDeletingLayerId(deleteLayerId);
+
     try {
       const response = await fetch("/api/collects/geo", {
         method: "DELETE",
@@ -141,17 +146,20 @@ export default function MapSidebar({
         const error = await response.json();
         console.error("Delete error:", error);
         toast.error("Gagal menghapus layer");
+        setDeletingLayerId(null);
         return;
       }
 
       toast.success("Layer berhasil dihapus!");
       setShowDeleteModal(false);
       setDeleteLayerId(null);
+      setDeletingLayerId(null);
       fetchLayers();
       handleReset();
     } catch (error: any) {
       console.error("Delete error:", error);
       toast.error("Error: " + error.message);
+      setDeletingLayerId(null);
     }
   };
 
@@ -257,17 +265,25 @@ export default function MapSidebar({
                   <div
                     key={layer._id}
                     className={`w-full text-sm p-3 rounded-lg transition font-medium flex items-center justify-between gap-3 ${
-                      selectedFile === layer.filename
+                      selectedFile === layer.blobUrl
                         ? "bg-green-600"
                         : "bg-slate-700 hover:bg-slate-600"
                     }`}>
                     <button
                       onClick={() => {
-                        loadGeoJsonFile(layer.filename);
+                        setLoadingLayerId(layer._id);
+                        const fileUrl = layer.blobUrl;
+                        loadGeoJsonFile(fileUrl);
                         if (isMobile) setSidebarOpen(false);
+                        setTimeout(() => setLoadingLayerId(null), 2000);
                       }}
-                      className="flex items-center gap-3 text-left hover:opacity-80 transition flex-1 min-w-0">
-                      <MapPin size={18} className="flex-shrink-0" />
+                      disabled={loadingLayerId === layer._id}
+                      className="flex items-center gap-3 text-left hover:opacity-80 transition flex-1 min-w-0 disabled:opacity-50">
+                      {loadingLayerId === layer._id ? (
+                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <MapPin size={18} className="flex-shrink-0" />
+                      )}
                       <span className="break-words">{layer.name}</span>
                     </button>
                     <button
@@ -414,8 +430,16 @@ export default function MapSidebar({
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition">
-                Ya, Hapus
+                disabled={deletingLayerId === deleteLayerId}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium transition flex items-center gap-2">
+                {deletingLayerId === deleteLayerId ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  "Ya, Hapus"
+                )}
               </button>
             </div>
           </div>
