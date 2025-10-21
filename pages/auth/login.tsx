@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { Eye, EyeOff, LogIn, MapIcon } from "lucide-react";
 import { useRouter } from "next/router";
 import { toast } from "sonner";
@@ -12,6 +12,14 @@ export default function LoginPage() {
   const [rememberDevice, setRememberDevice] = useState<boolean>(false);
   const router = useRouter();
   //   const { setLoading } = useLoading();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      toast.info("Anda sudah login!");
+      router.push("/");
+    }
+  }, [router]);
 
   const handleSubmit = async (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
