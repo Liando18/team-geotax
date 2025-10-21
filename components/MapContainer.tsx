@@ -27,27 +27,27 @@ export default function MapContainer({
   const tileLayers: Record<string, any> = {
     osm: {
       url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      attribution: "© OpenStreetMap",
+      attribution: "© 2025 GeoTax Arutala",
       maxZoom: 19,
     },
     satelliteLabeled: {
       url: "https://mt1.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}",
-      attribution: "© Google",
+      attribution: "© 2025 GeoTax Arutala",
       maxZoom: 20,
     },
     terrain: {
       url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
-      attribution: "© Esri",
+      attribution: "© 2025 GeoTax Arutala",
       maxZoom: 19,
     },
     voyager: {
       url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-      attribution: "© CartoDB",
+      attribution: "© 2025 GeoTax Arutala",
       maxZoom: 18,
     },
     positron: {
       url: "https://{s}.basemaps.cartocdn.com/positron/{z}/{x}/{y}{r}.png",
-      attribution: "© CartoDB",
+      attribution: "© 2025 GeoTax Arutala",
       maxZoom: 19,
     },
   };
