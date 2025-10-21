@@ -52,6 +52,7 @@ export default function MapContainer({
     },
   };
 
+  // Initialize map once
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
@@ -62,10 +63,13 @@ export default function MapContainer({
       maxZoom: tileLayers[tileLayer].maxZoom,
     }).addTo(newMap);
 
-    newMap.on("moveend", () => {
+    newMap.on("dragend", () => {
       const center = newMap.getCenter();
       setLat(parseFloat(center.lat.toFixed(4)));
       setLng(parseFloat(center.lng.toFixed(4)));
+    });
+
+    newMap.on("zoomend", () => {
       setZoom(newMap.getZoom());
     });
 
@@ -79,6 +83,7 @@ export default function MapContainer({
     };
   }, [setLat, setLng, setZoom]);
 
+  // Change tile layer
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -94,8 +99,9 @@ export default function MapContainer({
       attribution: tileLayers[tileLayer].attribution,
       maxZoom: tileLayers[tileLayer].maxZoom,
     }).addTo(map);
-  }, [tileLayer, tileLayers]);
+  }, [tileLayer]);
 
+  // Load GeoJSON when file changes
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 

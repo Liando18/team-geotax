@@ -148,6 +148,7 @@ export default function MapSidebar({
       setShowDeleteModal(false);
       setDeleteLayerId(null);
       fetchLayers();
+      handleReset();
     } catch (error: any) {
       console.error("Delete error:", error);
       toast.error("Error: " + error.message);
@@ -206,7 +207,7 @@ export default function MapSidebar({
   return (
     <>
       <div
-        className={`fixed lg:relative right-0 top-0 h-full lg:h-auto w-80 lg:w-72 bg-slate-800 rounded-lg border-2 border-slate-600 shadow-2xl flex flex-col transition-transform duration-300 z-50 ${
+        className={`fixed lg:relative right-0 top-0 h-full lg:h-auto w-80 lg:w-72 bg-slate-800 rounded-lg border-2 border-slate-600 shadow-2xl flex flex-col transition-transform duration-300 z-[999] ${
           sidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         }`}>
         {isMobile && (
@@ -250,8 +251,8 @@ export default function MapSidebar({
 
           <div className="space-y-2 flex-1 overflow-y-auto pr-1 [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-600 [&::-webkit-scrollbar-thumb]:rounded-full">
             {filteredLayers.length > 0 ? (
-              [...filteredLayers] // salin array agar tidak mutasi data asli
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // urutkan descending
+              [...filteredLayers]
+                .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
                 .map((layer) => (
                   <div
                     key={layer._id}
@@ -297,15 +298,6 @@ export default function MapSidebar({
           </div>
         </div>
       </div>
-
-      {toast && (
-        <div
-          className={`fixed top-4 right-4 px-4 py-3 rounded-lg text-white font-medium shadow-lg z-[10000] animate-fade-in ${
-            toast.type === "success" ? "bg-green-600" : "bg-red-600"
-          }`}>
-          {toast.message}
-        </div>
-      )}
 
       {showUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-[9999]">

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Inter } from "next/font/google";
 import MapHeader from "@/components/MapHeader";
 import MapSidebar from "@/components/MapSidebar";
+import { withAuth } from "@/lib/withAuth";
 
 type Props = {
   isConnected: boolean;
@@ -14,7 +15,7 @@ const MapContainer = dynamic(() => import("@/components/MapContainer"), {
   ssr: false,
 });
 
-export default function Home() {
+function Home() {
   const [isConnected, setIsConnected] = useState(true);
   const [lat, setLat] = useState(-0.8947);
   const [lng, setLng] = useState(100.3357);
@@ -101,3 +102,5 @@ export default function Home() {
     </div>
   );
 }
+
+export default withAuth(Home);
