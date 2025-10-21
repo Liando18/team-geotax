@@ -88,7 +88,7 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="mb-8">
+            <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Password
               </label>
@@ -109,7 +109,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-center mb-7">
               <input
                 type="checkbox"
                 id="rememberDevice"
